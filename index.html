@@ -1,0 +1,45 @@
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Instagram Çekiliş Sistemi</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>Instagram Yorum Çekiliş Sistemi</h1>
+  </header>
+  <div class="notice">
+    DİKKAT: Kazananlar yalnızca yorum yapanlar arasından seçilir. Gönderiyi beğenip paylaşmayan kullanıcılar olabilir. Bu kontrollerin manuel olarak yapılması gerekmektedir.
+  </div>
+  <div class="container">
+    <div class="main-content">
+      <section>
+        <h2>1. Çekiliş Yap</h2>
+        <input type="file" id="fileInput" accept=".txt" />
+        <input type="number" id="winnerCount" min="1" value="1" />
+        <button onclick="selectWinner()">Kazananı Seç</button>
+        <div id="winner"></div>
+        <a id="downloadLink" download="cekilis-kaydi.webm">🎬 Kaydı İndir</a>
+      </section>
+    </div>
+    <div class="sidebar">
+      <section>
+        <h2>2. Yorumları Dönüştür</h2>
+        <textarea id="rawComments" placeholder="username1: yorum\nusername2: yorum..."></textarea>
+        <button onclick="convertComments()">Kullanıcıları Ayıkla</button>
+        <div id="converted-users"></div>
+      </section>
+      <section>
+        <h2>3. Gönderiden Yorum Al</h2>
+        <input type="text" id="postUrl" placeholder="https://www.instagram.com/p/örnek/" />
+        <button onclick="fetchCommentsFromUrl()">Yorumları Getir</button>
+        <div id="fetched-users"></div>
+      </section>
+    </div>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
