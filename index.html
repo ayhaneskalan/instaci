@@ -1,45 +1,230 @@
-
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Instagram Çekiliş Sistemi</title>
-  <link rel="stylesheet" href="style.css" />
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f2f2f2;
+    }
+    header {
+      background: #4CAF50;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+    }
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      padding: 1rem;
+    }
+    .main-content {
+      flex: 2;
+      min-width: 300px;
+      padding: 1rem;
+    }
+    .sidebar {
+      flex: 1;
+      min-width: 300px;
+      padding: 1rem;
+    }
+    section {
+      background: white;
+      margin-bottom: 2rem;
+      padding: 1rem;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    input[type="file"], textarea, input[type="text"], input[type="number"] {
+      margin: 1rem 0;
+      font-size: 1rem;
+      width: 100%;
+      padding: 0.5rem;
+    }
+    textarea {
+      height: 150px;
+    }
+    button {
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 1rem;
+      width: 100%;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    #winner {
+      margin-top: 1rem;
+      text-align: center;
+      font-size: 1.5rem;
+      color: #d32f2f;
+      font-weight: bold;
+    }
+    #animation {
+      font-size: 1.2rem;
+      color: #555;
+      font-weight: bold;
+    }
+    .confetti {
+      position: fixed;
+      width: 10px;
+      height: 10px;
+      background-color: #fcd53f;
+      top: -10px;
+      animation: fall 3s linear infinite;
+      opacity: 0.7;
+    }
+    @keyframes fall {
+      0% { transform: translateY(0) rotate(0deg); }
+      100% { transform: translateY(100vh) rotate(360deg); }
+    }
+    #tabs {
+      display: flex;
+      justify-content: space-between;
+    }
+    .tab {
+      padding: 1rem;
+      background: #4CAF50;
+      color: white;
+      cursor: pointer;
+      border-radius: 5px;
+      margin: 0.5rem;
+    }
+    .tab:hover {
+      background-color: #45a049;
+    }
+    .active-tab {
+      background-color: #45a049;
+    }
+  </style>
 </head>
 <body>
   <header>
     <h1>Instagram Yorum Çekiliş Sistemi</h1>
   </header>
-  <div class="notice">
-    DİKKAT: Kazananlar yalnızca yorum yapanlar arasından seçilir. Gönderiyi beğenip paylaşmayan kullanıcılar olabilir. Bu kontrollerin manuel olarak yapılması gerekmektedir.
-  </div>
+
   <div class="container">
-    <div class="main-content">
-      <section>
-        <h2>1. Çekiliş Yap</h2>
-        <input type="file" id="fileInput" accept=".txt" />
-        <input type="number" id="winnerCount" min="1" value="1" />
-        <button onclick="selectWinner()">Kazananı Seç</button>
-        <div id="winner"></div>
-        <a id="downloadLink" download="cekilis-kaydi.webm">🎬 Kaydı İndir</a>
-      </section>
-    </div>
     <div class="sidebar">
       <section>
+        <h2>Seçim Yap</h2>
+        <div id="tabs">
+          <div class="tab active-tab" onclick="showTab('tab1')">Çekiliş Yap</div>
+          <div class="tab" onclick="showTab('tab2')">Yorumları Dönüştür</div>
+          <div class="tab" onclick="showTab('tab3')">Yorum Al</div>
+        </div>
+      </section>
+      <section id="tab1">
+        <h2>1. Çekiliş Yap</h2>
+        <p>Yorumlarınızı yükleyin (her satır bir kullanıcı yorumudur)</p>
+        <input type="file" id="fileInput" accept=".txt">
+        <p>Kaç kazanan seçilsin?</p>
+        <input type="number" id="winnerCount" min="1" value="1">
+        <button onclick="selectWinner()">Kazananı Seç</button>
+      </section>
+      <section id="tab2" style="display:none;">
         <h2>2. Yorumları Dönüştür</h2>
         <textarea id="rawComments" placeholder="username1: yorum\nusername2: yorum..."></textarea>
         <button onclick="convertComments()">Kullanıcıları Ayıkla</button>
-        <div id="converted-users"></div>
       </section>
-      <section>
+      <section id="tab3" style="display:none;">
         <h2>3. Gönderiden Yorum Al</h2>
-        <input type="text" id="postUrl" placeholder="https://www.instagram.com/p/örnek/" />
+        <input type="text" id="postUrl" placeholder="Instagram gönderi URL'si">
         <button onclick="fetchCommentsFromUrl()">Yorumları Getir</button>
-        <div id="fetched-users"></div>
+      </section>
+    </div>
+
+    <div class="main-content">
+      <section>
+        <div id="user-list"></div>
+        <div id="animation"></div>
+        <div id="winner"></div>
+        <div id="videoContainer"></div>
       </section>
     </div>
   </div>
-  <script src="script.js"></script>
+
+  <script>
+    let users = []; // Katılımcı listesi
+    let mediaRecorder; // Video kaydı
+    let recordedChunks = [];
+
+    // Sekme geçişi
+    function showTab(tabId) {
+      const tabs = document.querySelectorAll('section');
+      tabs.forEach(tab => tab.style.display = 'none');
+      document.getElementById(tabId).style.display = 'block';
+      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active-tab'));
+      document.querySelector(`.tab[onclick="showTab('${tabId}')"]`).classList.add('active-tab');
+    }
+
+    // Çekiliş kazananını seç
+    function selectWinner() {
+      const winnerCount = document.getElementById('winnerCount').value;
+      startRecording(); // Kaydı başlat
+      let winnerIndex = Math.floor(Math.random() * users.length);
+      let winner = users[winnerIndex];
+      
+      // Kazananı açıklama
+      document.getElementById('winner').innerText = `Kazanan: ${winner}`;
+      playConfetti(); // Konfeti efekti
+      stopRecording(); // Kaydı durdur
+    }
+
+    // Katılımcıların hızlıca gösterilmesi
+    function startAnimation() {
+      let index = 0;
+      const interval = setInterval(() => {
+        if (index < users.length) {
+          document.getElementById('animation').innerText = users[index];
+          index++;
+        } else {
+          clearInterval(interval);
+          selectWinner();
+        }
+      }, 100); // Her 100ms de bir kişi gösterilecek
+    }
+
+    // Video kaydı başlat
+    function startRecording() {
+      const stream = document.querySelector('video').captureStream();
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.ondataavailable = event => recordedChunks.push(event.data);
+      mediaRecorder.start();
+    }
+
+    // Video kaydını durdur ve kullanıcıya sun
+    function stopRecording() {
+      mediaRecorder.stop();
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+        const videoURL = URL.createObjectURL(blob);
+        const videoElement = document.createElement('video');
+        videoElement.src = videoURL;
+        videoElement.controls = true;
+        document.getElementById('videoContainer').appendChild(videoElement);
+      };
+    }
+
+    // Konfeti efektini başlat
+    function playConfetti() {
+      for (let i = 0; i < 100; i++) {
+        const confetti = document.createElement('div');
+        confetti.classList.add('confetti');
+        document.body.appendChild(confetti);
+      }
+    }
+  </script>
 </body>
 </html>
